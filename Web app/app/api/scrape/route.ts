@@ -24,12 +24,13 @@ export async function POST(request: Request) {
     // Set environment variables for the Python script
     const env = {
       ...process.env,
+      PYTHONIOENCODING: 'utf-8',
       SUPABASE_URL: process.env.SUPABASE_URL,
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     }
 
     // Execute the Python script
-    const command = `python3 scripts/opportunity_scraper.py ${targetDate}`
+    const command = `python scripts/opportunity_scraper.py ${targetDate}`
     const { stdout, stderr } = await execPromise(command, { env })
 
     if (stderr && !stderr.includes("Warning")) {
