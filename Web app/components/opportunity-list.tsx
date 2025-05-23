@@ -28,6 +28,7 @@ interface Opportunity {
 
 export default function OpportunityList({ opportunities }: { opportunities: Opportunity[] }) {
   const [isPosting, setIsPosting] = useState<Record<number, boolean>>({})
+  const [isApproving, setIsApproving] = useState<Record<number, boolean>>({}) // New state for approving
   const [activeTab, setActiveTab] = useState("all")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
   const [sortField, setSortField] = useState<"created_at" | "deadline">("created_at")
@@ -102,7 +103,15 @@ export default function OpportunityList({ opportunities }: { opportunities: Oppo
   }, [opportunities, activeTab, sortOrder, sortField, searchTerm, dateFilter])
 
   const handleApprove = async (id: number) => {
-    await approveOpportunity(id)
+    setIsApproving((prev) => ({ ...prev, [id]: true })) // Set loading true
+    try {
+      await approveOpportunity(id)
+    } catch (error) {
+      console.error("Error approving opportunity:", error)
+      // Optionally, show a toast notification for the error
+    } finally {
+      setIsApproving((prev) => ({ ...prev, [id]: false })) // Set loading false
+    }
   }
 
   const handlePostToTelegram = async (opportunity: Opportunity) => {
@@ -243,6 +252,7 @@ export default function OpportunityList({ opportunities }: { opportunities: Oppo
           <OpportunityGrid
             opportunities={filteredOpportunities}
             isPosting={isPosting}
+            isApproving={isApproving} // Pass new state
             handleApprove={handleApprove}
             handlePostToTelegram={handlePostToTelegram}
             formatDate={formatDate}
@@ -253,6 +263,7 @@ export default function OpportunityList({ opportunities }: { opportunities: Oppo
           <OpportunityGrid
             opportunities={filteredOpportunities}
             isPosting={isPosting}
+            isApproving={isApproving} // Pass new state
             handleApprove={handleApprove}
             handlePostToTelegram={handlePostToTelegram}
             formatDate={formatDate}
@@ -263,6 +274,7 @@ export default function OpportunityList({ opportunities }: { opportunities: Oppo
           <OpportunityGrid
             opportunities={filteredOpportunities}
             isPosting={isPosting}
+            isApproving={isApproving} // Pass new state
             handleApprove={handleApprove}
             handlePostToTelegram={handlePostToTelegram}
             formatDate={formatDate}
@@ -273,6 +285,7 @@ export default function OpportunityList({ opportunities }: { opportunities: Oppo
           <OpportunityGrid
             opportunities={filteredOpportunities}
             isPosting={isPosting}
+            isApproving={isApproving} // Pass new state
             handleApprove={handleApprove}
             handlePostToTelegram={handlePostToTelegram}
             formatDate={formatDate}
@@ -286,12 +299,14 @@ export default function OpportunityList({ opportunities }: { opportunities: Oppo
 function OpportunityGrid({
   opportunities,
   isPosting,
+  isApproving, // New prop
   handleApprove,
   handlePostToTelegram,
   formatDate,
 }: {
   opportunities: Opportunity[]
   isPosting: Record<number, boolean>
+  isApproving: Record<number, boolean> // New prop
   handleApprove: (id: number) => Promise<void>
   handlePostToTelegram: (opportunity: Opportunity) => Promise<void>
   formatDate: (dateString: string) => string
@@ -306,7 +321,7 @@ function OpportunityGrid({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {opportunities.map((opportunity) => (
+      {opportunities.map((opportunity, index) => ( // Added index
         <Card key={opportunity.id} className="flex flex-col h-full">
           <div className="relative h-48 w-full">
             {opportunity.thumbnail ? (
@@ -315,6 +330,7 @@ function OpportunityGrid({
                 alt={opportunity.title}
                 fill
                 className="object-cover rounded-t-lg"
+                priority={index === 0} // Add priority to the first image
                 onError={(e) => {
                   const target = e.target as HTMLImageElement
                   target.src = "/placeholder.svg?height=200&width=400"
@@ -379,9 +395,16 @@ function OpportunityGrid({
                   size="sm"
                   className="flex items-center gap-1 text-green-600"
                   onClick={() => handleApprove(opportunity.id)}
+                  disabled={isApproving[opportunity.id]} // Disable button when approving
                 >
-                  <CheckIcon size={14} />
-                  Approve
+                  {isApproving[opportunity.id] ? ( // Show loading text
+                    <>Approving...</>
+                  ) : (
+                    <>
+                      <CheckIcon size={14} />
+                      Approve
+                    </>
+                  )}
                 </Button>
               ) : !opportunity.posted_to_telegram ? (
                 <Button

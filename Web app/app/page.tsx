@@ -38,7 +38,7 @@ export default async function Home() {
       .order("created_at", { ascending: false })
 
     if (error) {
-      console.error("Error fetching opportunities:", error)
+      console.error("Error fetching opportunities:", JSON.stringify(error, null, 2))
       return (
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-2xl mx-auto text-center">
@@ -46,7 +46,9 @@ export default async function Home() {
             <p className="text-lg mb-8">
               There was a problem loading opportunities. Please try again or check your database connection.
             </p>
-            <pre className="bg-gray-100 p-4 rounded text-left overflow-auto text-sm">{error.message}</pre>
+            <pre className="bg-gray-100 p-4 rounded text-left overflow-auto text-sm">
+              {error.message || JSON.stringify(error, null, 2)}
+            </pre>
           </div>
         </div>
       )
